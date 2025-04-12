@@ -1,6 +1,6 @@
 {
   "name": "slate-stamps",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "type": "module",
@@ -25,7 +25,7 @@
   "directories": {
     "example": "example"
   },
-    "keywords": [
+  "keywords": [
     "slate",
     "slate plugin",
     "slate stamps",
@@ -37,7 +37,6 @@
     "text editor stamps",
     "text editor timestamps"
   ],
-
   "author": "fortyoneplustwo",
   "license": "ISC"
 }
