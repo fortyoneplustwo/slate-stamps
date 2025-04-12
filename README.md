@@ -55,10 +55,10 @@ import { withStamps, useStableFn } from 'slate-stamps'
 
 // Define the callbacks
 const onStampInsert = (_) => {
-	return { label: 'three', value: 3 }
+  return { label: 'three', value: 3 }
 }
 const onStampClick = (label, value) => {
-	console.log(`${ label, value }`)
+  console.log(`${ label, value }`)
 } 
 
 // Stabilize the callbacks 
@@ -67,9 +67,9 @@ const stableOnStampClick = useStableFn(onStampClick, [])
 
 // Apply the plugin with stable callbacks
 const editor = withStamps(
-	createEditor(), 
-	stableOnStampInsert, 
-	stableOnStampClick
+  createEditor(),
+  stableOnStampInsert,
+  stableOnStampClick
 ))
 ```
 
@@ -84,17 +84,17 @@ The plugin augments the `editor` with the following properties for your convenie
 #### Example
 ```javascript
 const Element = (props) => {
-	const { children, element, attributes } = props
+  const { children, element, attributes } = props
 
-	switch (element.type) {
-		// Render stamped elements using the default UI
-		case editor.stampedElementType: {
-			const { StampedElementComponent } = editor
-			return <StampedElementComponent {...props} />
-		}
-		default:
-			return <p {...attributes}>{children}</p>
-	}
+  switch (element.type) {
+    // Render stamped elements using the default UI
+    case editor.stampedElementType: {
+      const { StampedElementComponent } = editor
+      return <StampedElementComponent {...props} />
+    }
+    default:
+      return <p {...attributes}>{children}</p>
+  }
 }
 ```
 **Note**: If you're using a custom component to render the stamps, the `label` and `value` properties will automatically be passed to your component's `element` prop. For reference, see the default `StampedBlock` implementation in `withStamps.jsx`.
