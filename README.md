@@ -18,7 +18,7 @@ npm install slate-stamps
 
 # Usage
 ## Plugin
-### `withStamps(editor: Editor, onStampInsert: function, onStampClick: function): Editor`
+### `withStamps(editor: Editor, onStampInsert: function, onStampClick: function) => Editor`
 Our plugin `withStamps` takes in an editor object and two callbacks. It returns an editor object augmented with the stamp behavior defined by the callbacks described below.
 
 -  `onStampInsert(requestedAt: Date) => { label: string, value: any } | null`
