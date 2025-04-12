@@ -7,9 +7,7 @@ When text is typed on an empty line, a customizable stamp is automatically inser
 ### Key Features:
 
 -   **Fully customizable appearance**: Stamps can be styled as needed.
-    
 -   **Stateful**: Stamps can hold arbitrary data.
-    
 -   **Interactive**: Stamps can trigger custom behaviors when clicked.
 
 # Why use this?
@@ -45,7 +43,7 @@ Executes when a stamp is clicked. Receives `label: string` and `value: any` as a
 
 | ***⚠ Stabilization of callbacks*** |
 |--|
-| *Your callbacks **must** be stabilized in `useStableFn` passing them to to `withStamps`. If you want the function to be replaced when certain dependency values change, include those values in the dependency array of `useStableFn`.* |
+| *Your callbacks **must** be stabilized in `useStableFn` before passing them to `withStamps`. If you want the function to be replaced when certain dependency values change, include those values in the dependency array of `useStableFn`.* |
 
 
 
@@ -99,8 +97,42 @@ const Element = (props) => {
 	}
 }
 ```
-If you're using a custom component to render the stamps, the `label` and `value` properties will automatically be passed to your component's `element` prop. For reference, see the default `StampedBlock` implementation in `withStamps.jsx`.
+**Note**: If you're using a custom component to render the stamps, the `label` and `value` properties will automatically be passed to your component's `element` prop. For reference, see the default `StampedBlock` implementation in `withStamps.jsx`.
 
 # How it works
+### Stamped Elements
 
-# Resources
+Stamped elements are:
+
+-   **Block elements**: They behave like block-level nodes.
+-   **Always the lowest-level block in a branch**: They’re positioned at the end of a nested structure. 
+-   **Wrapped in a non-editor block**: They are always contained within another block element (not the editor itself).    
+-   **The only stamped child of their parent block**: A parent block can only have one stamped child at a time.
+    
+
+### Stamping a Line
+
+When an empty line is ready to be stamped:
+
+1.  The plugin locates the lowest-level block at the current selection.
+2.  It calls `onStampInsert` to fetch the stamp's data.    
+3.  It wraps the block’s children inside a stamped element, passing in the stamp data.
+    
+
+### Splitting a Stamped Line
+
+If a stamped line is split, two new stamped lines are created, with the content divided between them. The `onStampInsert` callback is triggered again to fetch the stamp data for the newly created line after the split.
+
+### Pasting Text from Outside
+
+When text is pasted from outside the editor, the plugin normalizes the pasted content by splitting the block at all newline characters. If the split block is a stamped line, the resulting splits will also be stamped and retain the same stamp data.
+
+# Customizing Behavior
+
+As with many plugins, you can customize the behavior of the editor by overriding its methods.
+
+# Assumptions
+To ensure proper functionality, all block elements that can contain leaf or inline elements **must** have a `type` property. Without this, the plugin may behave unexpectedly or throw errors.
+
+# Resources 
+There is an example project in the `example/` directory.
