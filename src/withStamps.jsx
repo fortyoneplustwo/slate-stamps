@@ -1,10 +1,19 @@
-import React from 'react'
-import { Editor, Transforms, Element, Range, Node, Path, Point, Text } from "slate"
+import React from "react"
+import {
+  Editor,
+  Transforms,
+  Element,
+  Range,
+  Node,
+  Path,
+  Point,
+  Text,
+} from "slate"
 import { css } from "@emotion/css"
 
-export const withStamps = (onStampInsert, onStampClick) => (editor) => {
-  const stampedBlockType = 'stamped-item'
-  const { deleteBackward, normalizeNode } = editor
+export const withStamps = (editor, onStampInsert, onStampClick) => {
+  const { deleteBackward, normalizeNode, insertText } = editor
+  const stampedBlockType = "stamped-item"
 
   const StampedBlock = ({ attributes, children, element }) => {
     return (
@@ -37,7 +46,7 @@ export const withStamps = (onStampInsert, onStampClick) => (editor) => {
               color: red;
               user-select: none;
               padding: 0;
-              &:focus {
+              &focus: {
                 outline: none;
               }
             `}
@@ -65,59 +74,54 @@ export const withStamps = (onStampInsert, onStampClick) => (editor) => {
   }
 
   editor.insertBreak = () => {
-    const stampData = onStampInsert()
     let { selection } = editor
 
     if (Range.isExpanded(selection)) {
       editor.deleteFragment()
-      const selectionStart = Point.isBefore(selection.anchor, selection.focus)
-        ? selection.anchor
-        : selection.focus
-      Transforms.setSelection(editor, {
-        anchor: selectionStart,
-        focus: selectionStart,
-      })
+      selection = editor.selection
     }
-    selection = editor.selection
 
-    let match = Editor.above(editor, {
-      match: (n) =>
-        !Editor.isEditor(n) &&
-        Element.isElement(n) &&
-        Editor.isBlock(editor, n) &&
-        n.type !== stampedBlockType,
-    })
+    let match = getWrappingUnstampedAncestor(editor)
     if (!match) {
-      throw Error('Invalid node: Could not find non-editor, non-stamped ancestor at selection')
+      throw Error(
+        "Invalid node: Could not find non-editor, non-stamped ancestor at selection"
+      )
     }
 
-    const [closestNonStampedAncestor, closestNonStampedAncestorPath] = match
+    const [unstampedAncestor, unstampedAncestorPath] = match
 
     match = getWrappingBlock(editor)
-    if (!match) throw Error('Invalid node: Could not find non-editor block at selection')
+    if (!match)
+      throw Error("Invalid node: Could not find non-editor block at selection")
 
-    const [currBlock, currBlockPath] = match
-    const blockStart = Editor.start(editor, currBlockPath)
-    const blockEnd = Editor.end(editor, currBlockPath)
+    const [block, blockPath] = match
+    const blockStart = Editor.start(editor, blockPath)
+    const blockEnd = Editor.end(editor, blockPath)
 
     if (Point.equals(selection.focus, blockEnd)) {
-      Transforms.insertNodes(editor, {
-        type: closestNonStampedAncestor.type,
-        children: [{ text: '' }],
-      }, { at: Path.next(closestNonStampedAncestorPath) })
+      Transforms.insertNodes(
+        editor,
+        {
+          type: unstampedAncestor.type,
+          children: [{ text: "" }],
+        },
+        { at: Path.next(unstampedAncestorPath) }
+      )
       Transforms.setSelection(
         editor,
-        Editor.range(editor, Path.next(closestNonStampedAncestorPath))
+        Editor.range(editor, Path.next(unstampedAncestorPath))
       )
       return
     }
 
     let contentAfterSelection
     if (Point.equals(selection.focus, blockStart)) {
-      Transforms.delete(editor, { at: { anchor: blockStart, focus: blockEnd } })
-      contentAfterSelection = currBlock.children
+      Transforms.delete(editor, {
+        at: { anchor: blockStart, focus: blockEnd },
+      })
+      contentAfterSelection = block.children
     } else {
-      contentAfterSelection = Node.fragment(currBlock, {
+      contentAfterSelection = Node.fragment(block, {
         anchor: {
           path: [selection.focus.path[selection.focus.path.length - 1]],
           offset: selection.focus.offset,
@@ -125,142 +129,191 @@ export const withStamps = (onStampInsert, onStampClick) => (editor) => {
         focus: {
           path: [blockEnd.path[blockEnd.path.length - 1]],
           offset: blockEnd.offset,
-        }
+        },
       })
       Transforms.delete(editor, {
         at: {
           anchor: selection.anchor,
           focus: blockEnd,
-        }
+        },
       })
     }
 
-    const children = (stampData && stampData?.value !== null)
-      ? [{
-        type: stampedBlockType,
-        label: stampData.label,
-        value: stampData.value,
-        children: structuredClone(contentAfterSelection),
-      }]
-      : structuredClone(contentAfterSelection)
+    const stampData = onStampInsert(new Date())
+    const children =
+      stampData && stampData?.value !== null
+        ? [
+            {
+              type: stampedBlockType,
+              label: stampData.label,
+              value: stampData.value,
+              children: structuredClone(contentAfterSelection),
+            },
+          ]
+        : structuredClone(contentAfterSelection)
 
-    Transforms.insertNodes(editor, {
-      type: closestNonStampedAncestor.type,
-      children: children
-    }, { at: Path.next(closestNonStampedAncestorPath) })
+    Transforms.insertNodes(
+      editor,
+      {
+        type: unstampedAncestor.type,
+        children: children,
+      },
+      { at: Path.next(unstampedAncestorPath) }
+    )
     Transforms.setSelection(editor, {
-      anchor: Editor.start(editor, Path.next(closestNonStampedAncestorPath)),
-      focus: Editor.start(editor, Path.next(closestNonStampedAncestorPath)),
+      anchor: Editor.start(editor, Path.next(unstampedAncestorPath)),
+      focus: Editor.start(editor, Path.next(unstampedAncestorPath)),
     })
     return
   }
 
-  editor.insertText = (text) => {
+  editor.insertText = text => {
+    if (Range.isExpanded(editor.selection)) editor.deleteFragment()
+    const marks = Editor.marks(editor)
     const match = getWrappingBlock(editor)
-    if (!match) throw Error('Invalid node: Text nodes must be wrapped inside a non-editor block element')
+    if (!match)
+      throw Error(
+        "Invalid node: Text nodes must be wrapped inside a non-editor block element"
+      )
 
-    const [currBlock, currBlockPath] = match
+    const [block, blockPath] = match
 
-    if (currBlock.type === stampedBlockType) {
-      Transforms.insertText(editor, text)
-      return
+    if (block.type !== stampedBlockType && isBlockEmpty(block)) {
+      const stampData = onStampInsert(new Date())
+      if (stampData && stampData.value !== null) {
+        Transforms.insertNodes(
+          editor,
+          {
+            type: block.type,
+            children: [
+              {
+                type: stampedBlockType,
+                label: stampData.label,
+                value: stampData.value,
+                children: [{ text: "", ...marks }],
+              },
+            ],
+          },
+          { at: Path.next(blockPath) }
+        )
+        Transforms.removeNodes(editor, { at: blockPath })
+      }
     }
-    if (!(currBlock.children.length === 1 && currBlock.children[0]?.text === '')) {
-      Transforms.insertText(editor, text)
-      return
-    }
-
-    const stampData = onStampInsert()
-    if (!stampData || stampData?.value === null) {
-      Transforms.insertText(editor, text)
-      return
-    }
-
-    Transforms.insertNodes(editor, {
-      type: currBlock.type,
-      children: [{
-        type: stampedBlockType,
-        label: stampData.label,
-        value: stampData.value,
-        children: [{ text: '' }],
-      }]
-    }, { at: Path.next(currBlockPath) })
-    Transforms.removeNodes(editor, { at: currBlockPath })
-    Transforms.insertText(editor, text)
+    insertText(text)
   }
 
   editor.deleteFragment = () => {
     const { selection } = editor
-    const { anchor, focus } = selection
-    const selectionStart = Point.isBefore(anchor, focus) ? anchor : focus
+    const selectionStart = Editor.start(editor, selection)
+    const selectionEnd = Editor.end(editor, selection)
 
     let match = getWrappingBlock(editor, { at: selectionStart })
     if (!match) {
-      throw Error('Invalid node: Selection before delete is not wrapped in a non-editor block')
+      throw Error(
+        "Invalid node: Selection before delete is not wrapped in a non-editor block"
+      )
     }
+    const [, blockPathAtSelectionStart] = match
 
-    const [blockAtSelectionStart, blockPathAtSelectionStart] = match
-    if (blockAtSelectionStart.type === stampedBlockType) {
+    match = getWrappingBlock(editor, { at: selectionEnd })
+    if (!match) {
+      throw Error(
+        "Invalid node: Selection before delete is not wrapped in a non-editor block"
+      )
+    }
+    const [blockAtSelectionEnd, blockPathAtSelectionEnd] = match
+
+    const isSelectionContainedWithinSameLine =
+      Point.compare(
+        selectionStart,
+        Editor.start(editor, blockPathAtSelectionStart)
+      ) >= 0 &&
+      Point.compare(
+        selectionEnd,
+        Editor.end(editor, blockPathAtSelectionStart)
+      ) <= 0
+
+    if (isSelectionContainedWithinSameLine) {
       Transforms.delete(editor)
       return
     }
-    if (!Point.equals(selectionStart,
-      Editor.start(editor, blockPathAtSelectionStart))) {
-      Transforms.delete(editor)
-      return
-    }
 
-    Transforms.delete(editor)
+    match = getWrappingUnstampedAncestor(editor, { at: selectionStart })
+    if (!match) throw Error("Could not find wrapping unstamped ancestor")
+    const [, unstampedAncestorPathAtSelectionStart] = match
 
-    match = getWrappingBlock(editor)
-    if (!match) throw Error('Selection after deletion is not inside a non-editor block')
+    const contentFromSelectionEndtoEndOfItsBlock = Node.fragment(
+      blockAtSelectionEnd,
+      {
+        anchor: {
+          path: selectionEnd.path.slice(-1),
+          offset: selectionEnd.offset,
+        },
+        focus: {
+          path: Editor.end(editor, blockPathAtSelectionEnd).path.slice(-1),
+          offset: Editor.end(editor, blockPathAtSelectionEnd).offset,
+        },
+      }
+    )
 
-    const [currBlockAfterDel, currBlockPathAfterDel] = match
-    if (currBlockAfterDel.type !== stampedBlockType) return
-    Transforms.setNodes(editor, {
-      type: blockAtSelectionStart.type
-    }, { at: currBlockPathAfterDel })
+    Transforms.removeNodes(editor, {
+      match: n =>
+        Element.isElement(n) &&
+        Editor.isBlock(editor, n) &&
+        n.type !== stampedBlockType,
+      at: {
+        anchor: Editor.start(
+          editor,
+          Path.next(unstampedAncestorPathAtSelectionStart)
+        ),
+        focus: selectionEnd,
+      },
+    })
+
+    Transforms.insertNodes(editor, contentFromSelectionEndtoEndOfItsBlock, {
+      at: {
+        anchor: selectionStart,
+        focus: Editor.end(editor, unstampedAncestorPathAtSelectionStart),
+      },
+    })
+
+    Transforms.collapse(editor, { edge: "start" })
   }
 
   editor.deleteBackward = (...args) => {
     const { selection } = editor
     let match = getWrappingBlock(editor)
-    if (match) {
-      const [currBlock, currBlockPath] = match
-      const currBlockStart = Editor.start(editor, currBlockPath)
-      if (currBlock.type === stampedBlockType) {
-        if (Point.equals(selection.anchor, currBlockStart)) {
-          Transforms.unwrapNodes(editor)
-          return
-        }
+    if (!match) throw Error("Could not find non-editor wrapping block")
+
+    const [block, blockPath] = match
+    if (Point.equals(selection.anchor, Editor.start(editor, blockPath))) {
+      if (block.type === stampedBlockType) {
+        Transforms.unwrapNodes(editor)
+        return
       }
 
       const pointBefore = Editor.before(editor, selection.anchor)
-      if (pointBefore && Point.equals(selection.anchor, currBlockStart)) {
-        match = Editor.above(editor, {
-          match: (n) =>
+      match =
+        pointBefore &&
+        Editor.above(editor, {
+          at: pointBefore,
+          match: n =>
             !Editor.isEditor(n) &&
             Element.isElement(n) &&
             n.type === stampedBlockType,
-          at: pointBefore,
         })
 
-        if (match) {
-          const [, blockPathAtPointBefore] = match
-          if (Point.equals(pointBefore, Editor.start(editor, blockPathAtPointBefore))) {
-            const children = currBlock.children
-            Transforms.removeNodes(editor)
-            Transforms.setSelection(editor, {
-              anchor: pointBefore,
-              focus: pointBefore,
-            })
+      if (match) {
+        Transforms.removeNodes(editor)
+        Transforms.setSelection(editor, {
+          anchor: pointBefore,
+          focus: pointBefore,
+        })
 
-            if (!(children.length === 1 && children[0].text === '')) {
-              Transforms.insertNodes(editor, children, { at: pointBefore })
-            }
-            return
-          }
+        if (!isBlockEmpty(block)) {
+          Transforms.insertNodes(editor, block.children, { at: pointBefore })
         }
+        return
       }
     }
     deleteBackward(...args)
@@ -271,42 +324,37 @@ export const withStamps = (onStampInsert, onStampClick) => (editor) => {
     if (Text.isText(node)) {
       const newlineIndex = node.text.search(/(?<!\\)\n/)
       if (newlineIndex >= 0) {
-        let match = Editor.above(editor, {
-          match: (n) =>
-            !Editor.isEditor(n) &&
-            Element.isElement(n) &&
-            n.type !== "stamped-item",
-          at: path
-        })
-
+        let match = getWrappingUnstampedAncestor(editor, { at: path })
         if (match) {
-          const [closestNonStampedAncestor, closestNonStampedAncestorPath] = match
+          const [unstampedAncestor, unstampedAncestorPath] = match
           Transforms.splitNodes(editor, {
             at: { path: path, offset: newlineIndex + 1 },
           })
           Transforms.delete(editor, {
             at: { path: path, offset: newlineIndex },
             distance: 1,
-            unit: 'character',
+            unit: "character",
           })
+
           if (!Node.has(editor, Path.next(Path.parent(path)))) return
+
           match = Editor.above(editor, {
-            match: (n) =>
+            match: n =>
               !Editor.isEditor(n) &&
               Element.isElement(n) &&
-              n.type === 'stamped-item',
-            at: path
+              n.type === stampedBlockType,
+            at: path,
           })
           if (match) {
             const [, pathOfLeftBlock] = match
             Transforms.moveNodes(editor, {
               at: Path.next(pathOfLeftBlock),
-              to: Path.next(closestNonStampedAncestorPath)
+              to: Path.next(unstampedAncestorPath),
             })
             Transforms.wrapNodes(
               editor,
-              { type: closestNonStampedAncestor.type },
-              { at: Path.next(closestNonStampedAncestorPath) }
+              { type: unstampedAncestor.type },
+              { at: Path.next(unstampedAncestorPath) }
             )
           }
         }
@@ -325,10 +373,22 @@ export const withStamps = (onStampInsert, onStampClick) => (editor) => {
 // Helpers
 const getWrappingBlock = (editor, options) => {
   return Editor.above(editor, {
-    match: (n) =>
-      !Editor.isEditor(n) &&
-      Element.isElement(n) &&
-      Editor.isBlock(editor, n),
-    at: options?.at ?? editor.selection
+    match: n =>
+      !Editor.isEditor(n) && Element.isElement(n) && Editor.isBlock(editor, n),
+    at: options?.at ?? editor.selection,
   })
 }
+
+const getWrappingUnstampedAncestor = (editor, options) => {
+  return Editor.above(editor, {
+    match: n =>
+      !Editor.isEditor(n) &&
+      Element.isElement(n) &&
+      n.type !== editor.stampedElementType,
+    at: options?.at ?? editor.selection,
+  })
+}
+
+const isBlockEmpty = block =>
+  block.children.length === 1 && block.children[0].text === ""
+

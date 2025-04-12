@@ -1,15 +1,19 @@
 import { Slate, Editable, withReact } from 'slate-react'
-import React from 'react'
-import { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 import { createEditor } from 'slate'
-import { useMemo } from 'react'
-import { withStamps } from 'slate-stamps'
+import { withStamps, useStableFn } from 'slate-stamps'
 
 export const Editor = ({ onStampInsert, onStampClick }) => {
-  const baseEditor = useMemo(() => withReact(createEditor()), [])
+  const stableOnStampInsert = useStableFn(onStampInsert, [])
+  const stableOnStampClick = useStableFn(onStampClick, [])
 
-  const editor = useMemo(() => withStamps(onStampInsert, onStampClick)(baseEditor),
-    [onStampInsert, onStampClick])
+  const [baseEditor] = useState(() => withReact(createEditor()))
+  const [editor] = useState(() => 
+    withStamps(
+      baseEditor, 
+      stableOnStampInsert, 
+      stableOnStampClick
+    ))
 
   const initialValue = [
     {

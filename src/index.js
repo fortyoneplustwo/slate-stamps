@@ -1,3 +1,4 @@
 import { withStamps } from "./withStamps"
+import { useStableFn } from "./useStableFn"
 
-export { withStamps }
+export { withStamps, useStableFn }
