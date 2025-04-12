@@ -1,6 +1,6 @@
 {
   "name": "slate-stamps",
-  "version": "0.0.1-alpha",
+  "version": "1.0.0",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "type": "module",
@@ -21,10 +21,23 @@
   "dependencies": {
     "slate-stamps": "link:"
   },
-  "description": "A plugin for Slate that synchronizes text entries with any entity by inserting a clickable stamp at the start of a line",
+  "description": "A plugin for Slate that inserts a clickable stamp at the start of a line on text input",
   "directories": {
     "example": "example"
   },
+    "keywords": [
+    "slate",
+    "slate plugin",
+    "slate stamps",
+    "slate plugin stamps",
+    "slate plugin timestamps",
+    "editor",
+    "text editor",
+    "timestamp",
+    "text editor stamps",
+    "text editor timestamps"
+  ],
+
   "author": "fortyoneplustwo",
   "license": "ISC"
 }
