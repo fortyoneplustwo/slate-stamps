@@ -1,0 +1,30 @@
+{
+  "name": "slate-stamps",
+  "version": "0.0.1-alpha",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "node esbuild.config.js"
+  },
+  "peerDependencies": {
+    "@emotion/css": "^11.11.2",
+    "react": "^18.0.0",
+    "slate": "^0.103.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.2"
+  },
+  "pnpm": {
+    "overrides": {}
+  },
+  "dependencies": {
+    "slate-stamps": "link:"
+  },
+  "description": "A plugin for Slate that synchronizes text entries with any entity by inserting a clickable stamp at the start of a line",
+  "directories": {
+    "example": "example"
+  },
+  "author": "fortyoneplustwo",
+  "license": "ISC"
+}
