@@ -135,4 +135,9 @@ As with many plugins, you can customize the behavior of the editor by overriding
 To ensure proper functionality, all block elements that can contain leaf or inline elements **must** have a `type` property. Without this, the plugin may behave unexpectedly or throw errors.
 
 # Resources 
-There is an example project in the `example/` directory.
+There is an example project in the `example/` directory. To run it:
+
+1. Clone this repository.
+2. Run `pnpm install` and `pnpm build` in the root directory.
+3. Navigate to `example/`.
+4. Run `pnpm install` and `pnpm run dev`.
