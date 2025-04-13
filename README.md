@@ -2,52 +2,49 @@
 
 A [Slate plugin](https://docs.slatejs.org/concepts/08-plugins) that adds stamp functionality to the editor.
 
-When text is typed on an empty line, a customizable stamp is automatically inserted at the beginning of that line.
+When text is typed on an empty line, a stamp is automatically inserted at the beginning of that line.
 
-### Key Features:
+**Features**:
 
--   **Fully customizable appearance**: Stamps can be styled as needed.
--   **Stateful**: Stamps can hold arbitrary data.
--   **Interactive**: Stamps can trigger custom behaviors when clicked.
+-   Stamps can be styled as needed.
+-   Stamps can hold arbitrary data.
+-   Stamps can trigger custom behaviors when clicked.
 
 # Why use this?
-You're implementing a custom text editor and need a symbol to appear at the start of a line on user input. The symbol may be clickable and rendered conditionally based on context. 
+You're implementing a text editor using [Slate](https://docs.slatejs.org/) and need a symbol to appear at the start of a line on user input. The symbol may be clickable and rendered conditionally based on context. 
 
-## Install
+# Install
 ```
 npm install slate-stamps
 ```
 
 # Usage
-## Plugin
+## Using the plugin
+We provide a plugin `withStamps` that can augment your editor with stamp functionality.
+
 #### `withStamps(editor: Editor, onStampInsert: function, onStampClick: function) => Editor`
-The function returns an augmented version of the editor object that was passed to it, enabling stamp functionality defined by the callbacks `onStampInsert` and `onStampClick`.
+Returns an `editor` object with stamp functionality defined by the callbacks `onStampInsert` and `onStampClick`.
 
-Callbacks:
+**Callbacks**:
 
-#### `onStampInsert(requestedAt: Date) => { label: string, value: any } | null`
+- `onStampInsert(requestedAt: Date) => { label: string, value: any } | null`
 	
 Executes when the user types on an empty line, right before a stamp is inserted. The `requestedAt` argument provides the timestamp of this event.
 
-Returns an object with `{ value, label }` to define the stamp's content. 
-
-- `value` holds the underlying data. 
-- `label` is a human-readable string that can be displayed inside the stamp.
+Returns an object `{ value, label }` to define the stamp's content. `value` holds the underlying data and `label` is a human-readable string that can be displayed inside the stamp.
 	
-	**Note** : If `null` is returned or the `value` property evaluates to `null`, then a stamp will not be inserted.
+ **Note** : If `null` is returned or the `value` property evaluates to `null`, then a stamp will not be inserted.
 
-#### `onStampClick(label: string, value: any) => void`
+- `onStampClick(label: string, value: any) => void`
 
-Executes when a stamp is clicked. Receives `label: string` and `value: any` as arguments which represent the data stored by the stamp.
+Executes when a stamp is clicked. Receives arguments which represent the data stored by the stamp.
 
 
 | ***⚠ Stabilization of callbacks*** |
 |--|
 | *Your callbacks **must** be stabilized in `useStableFn` before passing them to `withStamps`. If you want the function to be replaced when certain dependency values change, include those values in the dependency array of `useStableFn`.* |
 
-
-
-
+#### Example
 
 ```javascript
 import { createEditor } from 'slate'
@@ -73,7 +70,7 @@ const editor = withStamps(
 ))
 ```
 
-## Rendering 
+## Rendering stamped lines
 Stamped lines are represented internally as *stamped elements*. You’ll need to define how these elements are rendered in your editor.
 
 The plugin augments the `editor` with the following properties for your convenience:
@@ -97,10 +94,10 @@ const Element = (props) => {
   }
 }
 ```
-**Note**: If you're using a custom component to render the stamps, the `label` and `value` properties will automatically be passed to your component's `element` prop. For reference, see the default `StampedBlock` implementation in `withStamps.jsx`.
+**Note**: If you're using a custom component to render the stamps, the `label` and `value` properties will automatically be passed to your component's `element` prop. For reference, see the default `StampedBlock` implementation in `src/withStamps.jsx`.
 
 # How it works
-### Stamped Elements
+## Stamped elements
 
 Stamped elements are:
 
@@ -110,7 +107,7 @@ Stamped elements are:
 -   **The only stamped child of their parent block**: A parent block can only have one stamped child at a time.
     
 
-### Stamping a Line
+## Stamping a line
 
 When an empty line is ready to be stamped:
 
@@ -119,23 +116,23 @@ When an empty line is ready to be stamped:
 3.  It wraps the block’s children inside a stamped element, passing in the stamp data.
     
 
-### Splitting a Stamped Line
+## Splitting a stamped line
 
 If a stamped line is split, two new stamped lines are created, with the content divided between them. The `onStampInsert` callback is triggered again to fetch the stamp data for the newly created line after the split.
 
-### Pasting Text from Outside
+## Pasting text from outside
 
-When text is pasted from outside the editor, the plugin normalizes the pasted content by splitting the block at all newline characters. If the split block is a stamped line, the resulting splits will also be stamped and retain the same stamp data.
+When text is pasted from outside the editor, the plugin [normalizes](https://docs.slatejs.org/concepts/11-normalizing) the pasted content by splitting the block at all newline characters. If the split block is a stamped line, the resulting splits will also be stamped and retain the same stamp data.
 
-# Customizing Behavior
+# Customizing behavior
 
-As with many plugins, you can customize the behavior of the editor by overriding its methods.
+As with many plugins, you can customize the behavior of the editor by [overriding its methods](https://docs.slatejs.org/concepts/07-editor#overriding-behaviors).
 
 # Assumptions
 To ensure proper functionality, all block elements that can contain leaf or inline elements **must** have a `type` property. Without this, the plugin may behave unexpectedly or throw errors.
 
 # Resources 
-There is an example project in the `example/` directory. To run it:
+There is an example project in the `example/` directory. To run it locally:
 
 1. Clone this repository.
 2. Run `pnpm install` and `pnpm build` in the root directory.
