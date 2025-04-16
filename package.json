@@ -18,9 +18,6 @@
   "pnpm": {
     "overrides": {}
   },
-  "dependencies": {
-    "slate-stamps": "link:"
-  },
   "description": "A plugin for Slate that inserts a clickable stamp at the start of a line on text input",
   "directories": {
     "example": "example"
