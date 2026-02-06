@@ -197,7 +197,7 @@ type StampedElement = Element & {
   type: string;    // a unique id that identifies a stamped element
   value: any;      // the value referenced by the stamp
   label: string;   // a string that can be rendered inside the stamp,
-		   // which in most cases will be the pretty-printed value
+				   // which in most cases will be the pretty-printed value
 }
 ```
 
