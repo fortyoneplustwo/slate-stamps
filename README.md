@@ -181,7 +181,7 @@ A good data model can solve problems right from the conceptual level. The schema
 
 Visualized as a tree, an example schema could look like this.
 
-<!-- diagram -->
+<img width="976" height="455" alt="tree" src="https://github.com/user-attachments/assets/010a189e-f0bf-41f2-b697-cc2a7976add7" />
 
 ### Stamped Element
 
@@ -213,7 +213,7 @@ When an empty line is about to be stamped,
 2.  It then calls `onStampInsert` to fetch data that will be stored inside the stamped element.
 3.  Finally, it wraps the lowest-level block’s children inside a stamped element, passing in the fetched data.
 
-<!-- diagram -->
+<img width="802" height="562" alt="split4" src="https://github.com/user-attachments/assets/0a08e72d-6d21-4908-ba9c-3a325f70d816" />
 
 ### Splitting a stamped line
 
@@ -226,7 +226,7 @@ When a stamped line is split, it results in two stamped lines, but remember, a s
 > [!Note]
 > Because the original line was already stamped, we know from rules (2) and (3) of the schema definition that its immediate parent can neither be another stamped element nor the `Editor` itself. Hence, the result of the split remains valid.
 
-<!-- diagram -->
+<img width="1053" height="485" alt="split" src="https://github.com/user-attachments/assets/face60ed-34a2-40ae-b1d7-c6ca4acca90d" />
 
 ### Pasting text copied from outside
 
