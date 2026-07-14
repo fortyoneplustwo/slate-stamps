@@ -19,7 +19,7 @@ npm install slate-stamps
 
 Let's try to stamp each line with the number `3` and log the stamp's data to the console when clicked.
 
-#### Step 1: Augmenting the editor with stamp functionality
+### Step 1: Augmenting the editor with stamp functionality
 
 Apply the `withStamps` plugin to your editor, supplying two callbacks that define on-insert and on-click behaviour for all stamps.
 
@@ -61,7 +61,7 @@ const augmentedEditor = withStamps(
 ))
 ```
 
-#### Step 2: Rendering stamped lines
+### Step 2: Rendering stamped lines
 
 With an augmented editor in place, stamped lines still need explicit rendering. 
 
