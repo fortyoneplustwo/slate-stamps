@@ -25,7 +25,7 @@ function App() {
           count is {count}
         </button>
       </div>
-      <div style={{ width: '500px' }}>
+      <div>
         <Editor onStampClick={onStampClick} onStampInsert={onStampInsert} />
       </div>
     </>

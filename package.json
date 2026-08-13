@@ -5,7 +5,8 @@
   "module": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "node esbuild.config.js"
+    "dev": "node esbuild.dev.mjs",
+    "build": "node esbuild.prod.mjs"
   },
   "peerDependencies": {
     "@emotion/css": "^11.11.2",

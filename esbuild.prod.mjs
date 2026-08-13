@@ -1,6 +1,6 @@
-import esbuild from "esbuild";
+import * as esbuild from "esbuild";
 
-esbuild.build({
+await esbuild.build({
   entryPoints: ["src/index.js"],
   bundle: true,
   format: "esm",
@@ -8,4 +8,3 @@ esbuild.build({
   external: ["react", "slate", "@emotion/css"], // Keep peer dependencies external
   sourcemap: true,
 }).catch(() => process.exit(1));
-
