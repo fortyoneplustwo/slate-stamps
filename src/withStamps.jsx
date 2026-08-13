@@ -74,6 +74,7 @@ export const withStamps = (editor, onStampInsert, onStampClick) => {
   }
 
   editor.insertBreak = () => {
+    // console.log("insertBreak")
     let { selection } = editor
 
     if (Range.isExpanded(selection)) {
@@ -139,14 +140,14 @@ export const withStamps = (editor, onStampInsert, onStampClick) => {
       })
     }
 
-    const stampData = onStampInsert(new Date())
+    const stampDataPromise = Promise.resolve(onStampInsert(new Date()))
     const children =
       stampData && stampData?.value !== null
         ? [
             {
               type: stampedBlockType,
-              label: stampData.label,
-              value: stampData.value,
+              label: "...pending",
+              value: 3,
               children: structuredClone(contentAfterSelection),
             },
           ]
@@ -164,40 +165,75 @@ export const withStamps = (editor, onStampInsert, onStampClick) => {
       anchor: Editor.start(editor, Path.next(unstampedAncestorPath)),
       focus: Editor.start(editor, Path.next(unstampedAncestorPath)),
     })
+
+    // console.log("about to then")
+    stampDataPromise.then(result => {
+      // console.log("resolved")
+      Transforms.setNodes(
+        editor, 
+        {
+          children: [{
+            type: stampedBlockType,
+            label: result.label,
+            value: result.value,
+            children: structuredClone(contentAfterSelection),
+          }], 
+        },
+        { at: Path.next(unstampedAncestorPath) }
+      )
+    })
     return
   }
 
   editor.insertText = text => {
     if (Range.isExpanded(editor.selection)) editor.deleteFragment()
     const marks = Editor.marks(editor)
-    const match = getWrappingBlock(editor)
+    let match = getWrappingBlock(editor)
     if (!match)
       throw Error(
         "Invalid node: Text nodes must be wrapped inside a non-editor block element"
       )
 
-    const [block, blockPath] = match
+    let [block, blockPath] = match
 
     if (block.type !== stampedBlockType && isBlockEmpty(block)) {
-      const stampData = onStampInsert(new Date())
-      if (stampData && stampData.value !== null) {
-        Transforms.insertNodes(
-          editor,
+      const stampData = Promise.resolve(onStampInsert(new Date()))
+      console.log(Path.next(blockPath))
+      Transforms.insertNodes(
+        editor,
+        {
+          type: block.type,
+          children: [
+            {
+              type: stampedBlockType,
+              label: "...pending",
+              value: 0,
+              children: [{ text: "", ...marks }],
+            },
+          ],
+        },
+        { at: Path.next(blockPath) }
+      )
+      Transforms.removeNodes(editor, { at: blockPath })
+      match = Editor.above(editor, {
+        match: n =>
+          !Editor.isEditor(n) && Element.isElement(n) && Editor.isBlock(editor, n),
+        at: editor.selection
+      })
+      console.log(match)
+      if (!match) return
+      [block, blockPath] = match
+      stampData.then(result => {
+        console.log(result)
+        Transforms.setNodes(
+          editor, 
           {
-            type: block.type,
-            children: [
-              {
-                type: stampedBlockType,
-                label: stampData.label,
-                value: stampData.value,
-                children: [{ text: "", ...marks }],
-              },
-            ],
+              label: result.label,
+              value: result.value,
           },
-          { at: Path.next(blockPath) }
+          { at: blockPath }
         )
-        Transforms.removeNodes(editor, { at: blockPath })
-      }
+      })
     }
     insertText(text)
   }

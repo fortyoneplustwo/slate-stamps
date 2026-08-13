@@ -7,10 +7,14 @@ function App() {
   const [count, setCount] = useState(0)
 
   const onStampInsert = useCallback(() => {
-    return {
-      label: count.toString(),
-      value: count,
-    }
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          label: count.toString(),
+          value: count,
+        })
+      }, 2 * 1000)
+    })
   }, [count])
 
   const onStampClick = useCallback((_, value) => {
